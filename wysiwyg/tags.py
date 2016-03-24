@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import wysiwyg.exceptions
+from . import exceptions
+
+__all__ = (
+    'Tag',
+    'ChildrenValidatorMixin',
+    'PageTag',
+    'Text',
+    'TagRegistry',
+    'tag_registry',
+)
 
 
 class Tag(object):
@@ -10,31 +19,52 @@ class Tag(object):
         self.attrs = attrs or tuple()
         self.children = children or tuple()
 
-    def validate(self):
+    def is_valid(self):
         raise NotImplementedError('Method \'validate\' must be implemented.')
 
     def __iter__(self):
         return iter(self.children)
 
 
+class ChildrenValidatorMixin(object):
+    def is_valid(self):
+        return all(node.is_valid() for node in self.children)
+
+
+class PageTag(ChildrenValidatorMixin, Tag):
+    name = 'page'
+
+    def is_valid(self):
+        return not self.attrs and super(PageTag, self).is_valid()
+
+
+class Text(Tag):
+    name = 'text_node'
+
+    def is_valid(self):
+        return 'value' in self.attrs and len(self.attrs) == 1 and not self.children
+
+
 class TagRegistry(object):
     def __init__(self):
         self._tags = {}
+        self.register(PageTag)
+        self.register(Text)
 
     def register(self, tag):
         if not issubclass(tag, Tag):
-            raise wysiwyg.exceptions.TagInstanceException(
+            raise exceptions.TagInstanceException(
                 'Tag "%s" is not subclass of wysiwyg.tags.Tag.' % repr(tag)
             )
 
         if not isinstance(tag.name, str):
-            raise wysiwyg.exceptions.TagNameIsInvalidException(
+            raise exceptions.TagNameIsInvalidException(
                 'Tag name must be a string, but "%s" given.' % type(tag.name)
             )
 
         tag_name = tag.name.lower()
         if tag_name in self._tags:
-            raise wysiwyg.exceptions.TagAlreadyRegisteredException(
+            raise exceptions.TagAlreadyRegisteredException(
                 'Tag "%s" has been already registered.' % tag_name
             )
 
@@ -51,21 +81,3 @@ class TagRegistry(object):
 
 
 tag_registry = TagRegistry()
-
-
-class PageTag(Tag):
-    name = 'page'
-
-    def validate(self):
-        return not self.attrs
-
-
-class Text(Tag):
-    name = 'text_node'
-
-    def validate(self):
-        return not self.children
-
-
-tag_registry.register(PageTag)
-tag_registry.register(Text)

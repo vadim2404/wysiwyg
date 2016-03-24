@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 
+__all__ = (
+    'WysiwygException',
+    'TagInstanceException',
+    'TagAlreadyRegisteredException',
+    'TagNameIsInvalidException',
+    'ParserInvalidArgumentException',
+    'ParserParseException',
+    'ParserUnregisteredTagException',
+)
+
 
 class WysiwygException(Exception):
     pass

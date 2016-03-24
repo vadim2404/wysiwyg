@@ -8,9 +8,8 @@ try:
 except ImportError:
     from cgi import escape
 
-import wysiwyg.exceptions
-from wysiwyg.tags import tag_registry
-
+from . import exceptions
+from .tags import tag_registry, TagRegistry
 
 __all__ = (
     'parse',
@@ -20,11 +19,17 @@ __all__ = (
 TEXT_NODE_REGEX = re.compile(r'>([^<]+)<', re.MULTILINE | re.IGNORECASE | re.UNICODE)
 
 
-def parse(text, *args, **kwargs):
+def parse(text, registry=None, *args, **kwargs):
     if not isinstance(text, str):
-        raise wysiwyg.exceptions.ParserInvalidArgumentException(
+        raise exceptions.ParserInvalidArgumentException(
             'Text must be a string, but "%s" given.' % type(text)
         )
+
+    registry = registry or tag_registry
+    if not isinstance(registry, TagRegistry):
+         raise exceptions.ParserInvalidArgumentException(
+             'Registry must be an instance of wysiwyg.tags.TagRegistry, bug "%s" given.' % type(registry)
+         )
 
     formatted_text = TEXT_NODE_REGEX.sub(
         lambda match: '><text_node value="%s"></text_node><' % escape(match.group(1)), text
@@ -34,7 +39,7 @@ def parse(text, *args, **kwargs):
     try:
         tree = ElementTree.fromstring(wrapped_text)
     except ElementTree.ParseError:
-        raise wysiwyg.exceptions.ParserParseException(
+        raise exceptions.ParserParseException(
             'Text must be a valid XML-document.'
         )
 
@@ -42,18 +47,13 @@ def parse(text, *args, **kwargs):
         tag_name = node.tag.lower()
 
         if not tag_name in tag_registry:
-            raise wysiwyg.exceptions.ParserUnregisteredTagException(
+            raise exceptions.ParserUnregisteredTagException(
                 'Tag "%s" is not registered.' % tag_name
             )
 
-        children = []
-
-        for child in node:
-            children.append(create_tree(child))
-
         kwargs.update({
             'attrs': node.attrib,
-            'children': children,
+            'children': [create_tree(child) for child in node],
         })
         return tag_registry[tag_name](*args, **kwargs)
 
