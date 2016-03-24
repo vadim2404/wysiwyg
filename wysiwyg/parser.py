@@ -16,7 +16,8 @@ __all__ = (
 )
 
 
-TEXT_NODE_REGEX = re.compile(r'>([^<]+)<', re.MULTILINE | re.IGNORECASE | re.UNICODE)
+TEXT_NODE_REGEX = re.compile(r'>([^<]+)<',
+                             re.MULTILINE | re.IGNORECASE | re.UNICODE)
 
 
 def parse(text, registry=None, *args, **kwargs):
@@ -27,12 +28,15 @@ def parse(text, registry=None, *args, **kwargs):
 
     registry = registry or tag_registry
     if not isinstance(registry, TagRegistry):
-         raise exceptions.ParserInvalidArgumentException(
-             'Registry must be an instance of wysiwyg.tags.TagRegistry, bug "%s" given.' % type(registry)
-         )
+        raise exceptions.ParserInvalidArgumentException(
+            'Registry must be an instance of wysiwyg.tags.TagRegistry, '
+            'but "%s" given.' % type(registry)
+        )
 
     formatted_text = TEXT_NODE_REGEX.sub(
-        lambda match: '><text_node value="%s"></text_node><' % escape(match.group(1)), text
+        lambda match:
+            '><text_node value="%s"></text_node><' % escape(match.group(1)),
+        text
     )
     wrapped_text = '<?xml version="1.0"?><page>%s</page>' % formatted_text
 
@@ -46,7 +50,7 @@ def parse(text, registry=None, *args, **kwargs):
     def create_tree(node):
         tag_name = node.tag.lower()
 
-        if not tag_name in tag_registry:
+        if tag_name not in tag_registry:
             raise exceptions.ParserUnregisteredTagException(
                 'Tag "%s" is not registered.' % tag_name
             )

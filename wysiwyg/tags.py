@@ -42,7 +42,11 @@ class Text(Tag):
     name = 'text_node'
 
     def is_valid(self):
-        return 'value' in self.attrs and len(self.attrs) == 1 and not self.children
+        return (
+            'value' in self.attrs and
+            len(self.attrs) == 1 and
+            not self.children
+        )
 
 
 class TagRegistry(object):
