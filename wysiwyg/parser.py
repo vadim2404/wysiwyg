@@ -50,7 +50,7 @@ def parse(text, registry=None, *args, **kwargs):
     def create_tree(node):
         tag_name = node.tag.lower()
 
-        if tag_name not in tag_registry:
+        if tag_name not in registry:
             raise exceptions.ParserUnregisteredTagException(
                 'Tag "%s" is not registered.' % tag_name
             )
@@ -59,6 +59,6 @@ def parse(text, registry=None, *args, **kwargs):
             'attrs': node.attrib,
             'children': [create_tree(child) for child in node],
         })
-        return tag_registry[tag_name](*args, **kwargs)
+        return registry[tag_name](*args, **kwargs)
 
     return create_tree(tree)
